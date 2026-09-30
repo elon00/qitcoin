@@ -1006,7 +1006,27 @@ class QTCPortalHandler(BaseHTTPRequestHandler):
             res = x402_engine.settle_invoice(inv_id, txid)
             self.send_json(res)
 
+        elif parsed.path == "/api/faucet":
+            recipient = data.get("address")
+            if not recipient or not recipient.startswith("Q"):
+                self.send_json({"error": "Invalid QTC address. Must start with 'Q'."}, status=400)
+                return
+            try:
+                tx = node_chain.send_transaction(node_chain.dev_miner_address, recipient, 1000.0)
+                # Auto-mine block to confirm faucet payout
+                block = node_chain.mine_block()
+                self.send_json({
+                    "status": "PAID",
+                    "recipient": recipient,
+                    "amount_qtc": 1000.0,
+                    "txid": tx["txid"],
+                    "confirmed_in_block": block["height"]
+                })
+            except Exception as e:
+                self.send_json({"error": str(e)}, status=400)
+
         elif parsed.path == "/api/save_keys":
+
             allow_key_writes = os.getenv("QTC_ALLOW_KEY_WRITES", "0") == "1"
             is_local = self.client_address[0] in {"127.0.0.1", "::1"}
             if not (allow_key_writes and is_local):

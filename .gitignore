@@ -1,4 +1,6 @@
 upstream/
 build/
+dist/
 *.log
 .env
+

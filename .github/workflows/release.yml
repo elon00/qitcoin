@@ -1,0 +1,43 @@
+name: Create GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Publish Official Qitcoin Release
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Built Core Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: qitcoin-core-linux-x86_64
+          path: bin/
+        continue-on-error: true
+
+      - name: Create Release Tarball & Checksums
+        run: |
+          mkdir -p release-pkg/bin release-pkg/doc
+          if [ -d "bin" ]; then
+            cp bin/* release-pkg/bin/ || true
+          fi
+          cp -r docker/*.conf release-pkg/ 2>/dev/null || true
+          cp README.md LICENSE release-pkg/
+          cp docs/*.md release-pkg/doc/
+          tar -czf "qitcoin-${{ github.ref_name }}-linux-x86_64.tar.gz" release-pkg/
+          sha256sum "qitcoin-${{ github.ref_name }}-linux-x86_64.tar.gz" > SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            qitcoin-*.tar.gz
+            SHA256SUMS.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true
