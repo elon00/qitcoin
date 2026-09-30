@@ -1007,6 +1007,12 @@ class QTCPortalHandler(BaseHTTPRequestHandler):
             self.send_json(res)
 
         elif parsed.path == "/api/save_keys":
+            allow_key_writes = os.getenv("QTC_ALLOW_KEY_WRITES", "0") == "1"
+            is_local = self.client_address[0] in {"127.0.0.1", "::1"}
+            if not (allow_key_writes and is_local):
+                self.send_response(403)
+                self.send_json({"error": "Remote secret writes are disabled. Configure secrets in the hosting provider."})
+                return
             if data.get("gemini"): key_manager.set_key("GEMINI_API_KEY", data.get("gemini"))
             if data.get("openai"): key_manager.set_key("OPENAI_API_KEY", data.get("openai"))
             if data.get("eth"): key_manager.set_key("ETHEREUM_RPC_URL", data.get("eth"))
