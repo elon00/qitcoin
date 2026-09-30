@@ -77,18 +77,19 @@ class PQCBridgeAttestor:
             pk_hex = self.dsa_pk.hex()
             verified = ml_dsa_65_verify(self.dsa_pk, msg_hash, sig)
         else:
-            # Fallback mock for testing
+            # Test-only fallback. Never report cryptographic verification when
+            # the real ML-DSA implementation is unavailable.
             sig_hex = hashlib.sha3_512(msg_hash).hexdigest()
-            pk_hex = "NIST_ML_DSA_65_MOCK_PUBKEY"
-            verified = True
+            pk_hex = "PQC_UNAVAILABLE_TEST_ONLY"
+            verified = False
 
         return {
             "payload": payload,
             "message_hash": msg_hash.hex(),
             "pqc_signature": sig_hex[:64] + "..." + sig_hex[-32:], # Truncated for readability in logs
             "pqc_sig_len_bytes": len(sig_hex) // 2 if self.pqc_enabled else 3309,
-            "nist_standard": "FIPS 204 (ML-DSA-65) Finalized August 2024",
-            "security_category": "NIST Category 3 (128-bit Post-Quantum Security)",
+            "nist_standard": "FIPS 204 (ML-DSA-65)" if self.pqc_enabled else "PQC implementation unavailable (test-only fallback)",
+            "security_category": "NIST Category 3" if self.pqc_enabled else "NOT VERIFIED",
             "is_valid": verified
         }
 
