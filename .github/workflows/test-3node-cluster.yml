@@ -1,0 +1,37 @@
+name: Test Native 3-Node Cluster
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-cluster:
+    name: Native 3-Node Docker Cluster Integration Test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Start 3-Node Cluster
+        run: |
+          echo "Building native qitcoind container and starting 3-node cluster..."
+          docker-compose up -d --build
+          echo "Waiting 15 seconds for nodes to initialize..."
+          sleep 15
+          docker-compose ps
+
+      - name: Check Cluster Logs
+        run: |
+          docker-compose logs --tail=50
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Strict 3-Node Functional Test Suite
+        run: |
+          python test/functional/test_qitcoin_3nodes.py
