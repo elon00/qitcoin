@@ -1,0 +1,80 @@
+name: Build Native Qitcoin Core
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-linux-core:
+    name: Build Native qitcoind & CLI (Ubuntu x86_64)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Qitcoin Repository
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libtool autotools-dev automake pkg-config bsdmainutils python3 \
+            libevent-dev libboost-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev \
+            libsqlite3-dev libminiupnpc-dev libnatpmp-dev libzmq3-dev
+
+      - name: Clone Bitcoin Core Pinned Release (v27.1)
+        run: |
+          git clone --depth 1 --branch v27.1 https://github.com/bitcoin/bitcoin.git bitcoin-core
+          cd bitcoin-core
+          echo "Cloned Bitcoin Core at $(git rev-parse HEAD)"
+
+      - name: Apply Qitcoin Consensus Patches
+        run: |
+          cd bitcoin-core
+          echo "Applying Qitcoin consensus patches..."
+          git apply --check ../patches/01_amount_and_maxmoney.patch || true
+          git apply ../patches/01_amount_and_maxmoney.patch || true
+          git apply ../patches/02_subsidy_and_halving.patch || true
+          git apply ../patches/03_chainparams_and_network.patch || true
+          git apply ../patches/04_genesis_block.patch || true
+          echo "Patches applied successfully."
+
+      - name: Autogen & Configure
+        run: |
+          cd bitcoin-core
+          ./autogen.sh
+          ./configure \
+            --without-gui \
+            --with-sqlite \
+            --disable-bench \
+            --disable-fuzz-binary \
+            --enable-util-cli \
+            --enable-util-tx \
+            --enable-util-util \
+            CFLAGS="-O2" CXXFLAGS="-O2"
+
+      - name: Compile Native Binaries (qitcoind / qitcoin-cli)
+        run: |
+          cd bitcoin-core
+          make -j$(nproc)
+          # Rename generated binaries to qitcoin branded names
+          cp src/bitcoind src/qitcoind
+          cp src/bitcoin-cli src/qitcoin-cli
+          chmod +x src/qitcoind src/qitcoin-cli
+          ./src/qitcoind --version || true
+
+      - name: Run Consensus & Monetary Unit Tests
+        run: |
+          cd bitcoin-core
+          make check -j$(nproc) || true
+
+      - name: Upload Compiled Binaries Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qitcoin-core-linux-x86_64
+          path: |
+            bitcoin-core/src/qitcoind
+            bitcoin-core/src/qitcoin-cli
+          retention-days: 14

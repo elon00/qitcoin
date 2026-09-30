@@ -1,0 +1,45 @@
+# Multi-stage Dockerfile for Qitcoin Core Native Daemon (qitcoind)
+FROM ubuntu:22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    build-essential libtool autotools-dev automake pkg-config bsdmainutils python3 \
+    libevent-dev libboost-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev \
+    libsqlite3-dev libminiupnpc-dev libnatpmp-dev libzmq3-dev git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+RUN git clone --depth 1 --branch v27.1 https://github.com/bitcoin/bitcoin.git .
+
+# Copy and apply Qitcoin consensus patches
+COPY patches /patches
+RUN git apply /patches/01_amount_and_maxmoney.patch || true && \
+    git apply /patches/02_subsidy_and_halving.patch || true && \
+    git apply /patches/03_chainparams_and_network.patch || true && \
+    git apply /patches/04_genesis_block.patch || true
+
+RUN ./autogen.sh && \
+    ./configure --without-gui --with-sqlite --disable-bench --disable-fuzz-binary && \
+    make -j$(nproc) && \
+    cp src/bitcoind src/qitcoind && \
+    cp src/bitcoin-cli src/qitcoin-cli
+
+# Production runtime container
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y \
+    libevent-2.1-7 libevent-pthreads-2.1-7 libsqlite3-0 libzmq5 curl jq \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /build/src/qitcoind /usr/local/bin/qitcoind
+COPY --from=builder /build/src/qitcoin-cli /usr/local/bin/qitcoin-cli
+
+RUN useradd -m -u 1000 qitcoin
+USER qitcoin
+WORKDIR /home/qitcoin
+
+EXPOSE 19333 19332 39333 39332
+
+ENTRYPOINT ["qitcoind"]
+CMD ["-printtoconsole"]

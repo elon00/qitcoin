@@ -1,10 +1,61 @@
 services:
+  # Node 1: Primary Miner & Seed Node
   node1:
-    image: ubuntu:24.04
-    command: ["bash","-lc","echo 'Qitcoin binary not built yet; mount qitcoind here after Phase 1' && sleep infinity"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.qitcoind
+    container_name: qitcoin-node1
+    command: ["qitcoind", "-conf=/etc/qitcoin/qitcoin.conf"]
+    volumes:
+      - ./docker/node1.conf:/etc/qitcoin/qitcoin.conf:ro
+      - node1-data:/home/qitcoin/.qitcoin
+    ports:
+      - "19332:39332" # RPC Node 1
+      - "19333:39333" # P2P Node 1
+    networks:
+      - qitcoin-net
+
+  # Node 2: Validator & Relay Node
   node2:
-    image: ubuntu:24.04
-    command: ["bash","-lc","echo 'Qitcoin binary not built yet; mount qitcoind here after Phase 1' && sleep infinity"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.qitcoind
+    container_name: qitcoin-node2
+    command: ["qitcoind", "-conf=/etc/qitcoin/qitcoin.conf"]
+    volumes:
+      - ./docker/node2.conf:/etc/qitcoin/qitcoin.conf:ro
+      - node2-data:/home/qitcoin/.qitcoin
+    ports:
+      - "19334:39332" # RPC Node 2
+      - "19335:39333" # P2P Node 2
+    depends_on:
+      - node1
+    networks:
+      - qitcoin-net
+
+  # Node 3: Wallet & Explorer Peer Node
   node3:
-    image: ubuntu:24.04
-    command: ["bash","-lc","echo 'Qitcoin binary not built yet; mount qitcoind here after Phase 1' && sleep infinity"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.qitcoind
+    container_name: qitcoin-node3
+    command: ["qitcoind", "-conf=/etc/qitcoin/qitcoin.conf"]
+    volumes:
+      - ./docker/node3.conf:/etc/qitcoin/qitcoin.conf:ro
+      - node3-data:/home/qitcoin/.qitcoin
+    ports:
+      - "19336:39332" # RPC Node 3
+      - "19337:39333" # P2P Node 3
+    depends_on:
+      - node1
+    networks:
+      - qitcoin-net
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:
+
+networks:
+  qitcoin-net:
+    driver: bridge
