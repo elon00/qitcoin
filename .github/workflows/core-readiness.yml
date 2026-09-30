@@ -52,7 +52,7 @@ jobs:
         run: python scripts/prepare_qitcoin_core.py upstream/bitcoin
       - name: Configure headless Core build
         working-directory: upstream/bitcoin
-        run: cmake -B build -DENABLE_WALLET=OFF -DBUILD_GUI=OFF -DBUILD_TESTS=OFF -DBUILD_BENCH=OFF
+        run: cmake -B build -DENABLE_IPC=OFF -DENABLE_WALLET=OFF -DBUILD_GUI=OFF -DBUILD_TESTS=OFF -DBUILD_BENCH=OFF
       - name: Build daemon and CLI
         working-directory: upstream/bitcoin
         run: cmake --build build -j2 --target bitcoind bitcoin-cli
