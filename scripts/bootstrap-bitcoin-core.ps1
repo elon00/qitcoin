@@ -1,5 +1,5 @@
 $ErrorActionPreference = "Stop"
-$ref = if ($env:UPSTREAM_REF) { $env:UPSTREAM_REF } else { "master" }
+$ref = if ($env:UPSTREAM_REF) { $env:UPSTREAM_REF } else { "v30.2" }
 New-Item -ItemType Directory -Force -Path "upstream" | Out-Null
 if (-not (Test-Path "upstream/bitcoin/.git")) {
   git clone https://github.com/bitcoin/bitcoin.git upstream/bitcoin
@@ -9,4 +9,4 @@ git fetch --tags origin
 git checkout $ref
 Pop-Location
 Write-Host "Bitcoin Core source ready at upstream/bitcoin ($ref)."
-Write-Host "Next: pin a reviewed release tag, then implement the Qitcoin consensus patch set documented in docs/."
+python ..\\..\\scripts\\prepare_qitcoin_core.py .\nWrite-Host "Qitcoin transformation applied to pinned Bitcoin Core $ref."
