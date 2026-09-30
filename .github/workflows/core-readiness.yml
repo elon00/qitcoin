@@ -36,3 +36,29 @@ jobs:
           grep -q '19332' upstream/bitcoin/src/chainparamsbase.cpp
           grep -q '29332' upstream/bitcoin/src/chainparamsbase.cpp
           grep -q '39332' upstream/bitcoin/src/chainparamsbase.cpp
+
+
+  core-build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config python3 libevent-dev libboost-dev
+      - name: Clone pinned Bitcoin Core v30.2
+        run: git clone --depth 1 --branch v30.2 https://github.com/bitcoin/bitcoin.git upstream/bitcoin
+      - name: Apply Qitcoin transformation
+        run: python scripts/prepare_qitcoin_core.py upstream/bitcoin
+      - name: Configure headless Core build
+        working-directory: upstream/bitcoin
+        run: cmake -B build -DENABLE_WALLET=OFF -DBUILD_GUI=OFF -DBUILD_TESTS=OFF -DBUILD_BENCH=OFF
+      - name: Build daemon and CLI
+        working-directory: upstream/bitcoin
+        run: cmake --build build -j2 --target bitcoind bitcoin-cli
+      - name: Verify binaries
+        working-directory: upstream/bitcoin
+        run: |
+          test -x build/bin/bitcoind
+          test -x build/bin/bitcoin-cli
+          build/bin/bitcoind --version
