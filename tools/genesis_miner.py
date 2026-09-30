@@ -61,7 +61,7 @@ def create_coinbase_tx(psz_timestamp: str, pubkey_hex: str, reward_qits: int) ->
     tx += struct.pack("<q", reward_qits)
     
     # ScriptPubKey: push pubkey + OP_CHECKSIG
-    pubkey_bytes = binascii.unhexlify(pubkey_key)
+    pubkey_bytes = binascii.unhexlify(pubkey_hex)
     script_pubkey = bytes([len(pubkey_bytes)]) + pubkey_bytes + b"\xac" # OP_CHECKSIG
     
     # ScriptPubKey length
