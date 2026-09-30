@@ -1010,8 +1010,7 @@ class QTCPortalHandler(BaseHTTPRequestHandler):
             allow_key_writes = os.getenv("QTC_ALLOW_KEY_WRITES", "0") == "1"
             is_local = self.client_address[0] in {"127.0.0.1", "::1"}
             if not (allow_key_writes and is_local):
-                self.send_response(403)
-                self.send_json({"error": "Remote secret writes are disabled. Configure secrets in the hosting provider."})
+                self.send_json({"error": "Remote secret writes are disabled. Configure secrets in the hosting provider."}, status=403)
                 return
             if data.get("gemini"): key_manager.set_key("GEMINI_API_KEY", data.get("gemini"))
             if data.get("openai"): key_manager.set_key("OPENAI_API_KEY", data.get("openai"))
@@ -1032,8 +1031,8 @@ class QTCPortalHandler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
-    def send_json(self, obj):
-        self.send_response(200)
+    def send_json(self, obj, status=200):
+        self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(json.dumps(obj).encode("utf-8"))
