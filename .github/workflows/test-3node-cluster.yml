@@ -18,14 +18,14 @@ jobs:
       - name: Build and Start 3-Node Cluster
         run: |
           echo "Building native qitcoind container and starting 3-node cluster..."
-          docker-compose up -d --build
+          docker compose up -d --build
           echo "Waiting 15 seconds for nodes to initialize..."
           sleep 15
-          docker-compose ps
+          docker compose ps
 
       - name: Check Cluster Logs
         run: |
-          docker-compose logs --tail=50
+          docker compose logs --tail=50
 
       - name: Set up Python
         uses: actions/setup-python@v5
