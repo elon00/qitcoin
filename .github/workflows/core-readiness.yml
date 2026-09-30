@@ -1,0 +1,38 @@
+name: Qitcoin core readiness
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  repo-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+      - run: python tools/verify_supply.py
+      - run: python tools/readiness_check.py
+      - run: python -m compileall -q agentics bridge config launchpad localhost_node tools x402 scripts
+
+  core-transform-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone pinned Bitcoin Core v30.2
+        run: git clone --depth 1 --branch v30.2 https://github.com/bitcoin/bitcoin.git upstream/bitcoin
+      - name: Apply deterministic Qitcoin transformation
+        run: python scripts/prepare_qitcoin_core.py upstream/bitcoin
+      - name: Verify transformed consensus anchors
+        run: |
+          grep -q 'COIN = 1000000' upstream/bitcoin/src/consensus/amount.h
+          grep -q 'MAX_MONEY = 1000000000000LL \* COIN' upstream/bitcoin/src/consensus/amount.h
+          grep -q '250000LL \* COIN' upstream/bitcoin/src/validation.cpp
+          grep -q 'nDefaultPort = 19333' upstream/bitcoin/src/kernel/chainparams.cpp
+          grep -q 'nDefaultPort = 29333' upstream/bitcoin/src/kernel/chainparams.cpp
+          grep -q 'nDefaultPort = 39333' upstream/bitcoin/src/kernel/chainparams.cpp
+          grep -q '19332' upstream/bitcoin/src/chainparamsbase.cpp
+          grep -q '29332' upstream/bitcoin/src/chainparamsbase.cpp
+          grep -q '39332' upstream/bitcoin/src/chainparamsbase.cpp
