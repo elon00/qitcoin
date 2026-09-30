@@ -279,7 +279,7 @@ HTML_PORTAL = """<!DOCTYPE html>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="pill">&#x25CF; REGTEST LOCAL</span>
-                <span class="pill" style="color:var(--green); border-color:#065f46;">NIST FIPS 204 ACTIVE</span>
+                <span class="pill" style="color:var(--green); border-color:#065f46;">PQC STATUS</span>
                 <button class="wallet-btn" onclick="openWalletModal()">
                     <span id="wallet-label">&#x1f45b; Connect Wallet</span>
                 </button>
@@ -1040,7 +1040,7 @@ def run_server(port=8080):
     print(f"Web Portal Dashboard    : http://localhost:{port}")
     print(f"Bitcoin JSON-RPC 2.0 API: http://localhost:{port}/rpc")
     print(f"Cross-Chain DEX Swaps   : ACTIVE (QTC <-> USDT, BTC, ETH, SOL, ALGO)")
-    print(f"NIST Post-Quantum PQC   : FIPS 204 (ML-DSA-65) VERIFIED")
+    print("NIST Post-Quantum PQC   : " + ("REAL ML-DSA AVAILABLE" if pqc_attestor.pqc_enabled else "TEST-ONLY FALLBACK (NOT VERIFIED)"))
     print(f"Multimodal AI Agentics  : ONLINE")
     print(f"Conway Automaton Mesh   : ACTIVE (16x16 Lattice)")
     print(f"x402 Bazaar Protocol    : READY (HTTP 402 Micropayments)")
