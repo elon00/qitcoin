@@ -1,0 +1,10 @@
+services:
+  node1:
+    image: ubuntu:24.04
+    command: ["bash","-lc","echo 'Qitcoin binary not built yet; mount qitcoind here after Phase 1' && sleep infinity"]
+  node2:
+    image: ubuntu:24.04
+    command: ["bash","-lc","echo 'Qitcoin binary not built yet; mount qitcoind here after Phase 1' && sleep infinity"]
+  node3:
+    image: ubuntu:24.04
+    command: ["bash","-lc","echo 'Qitcoin binary not built yet; mount qitcoind here after Phase 1' && sleep infinity"]

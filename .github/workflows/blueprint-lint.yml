@@ -1,0 +1,26 @@
+name: Blueprint validation
+on:
+  push:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required project files
+        run: |
+          test -f README.md
+          test -f docs/BLUEPRINT.md
+          test -f docs/COIN_SPEC.md
+          test -f docs/ROADMAP.md
+          test -f docs/TEST_MATRIX.md
+          test -f docs/END_TO_END_SOLUTIONS.md
+          test -f scripts/bootstrap-bitcoin-core.sh
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run 1 Trillion Supply Monetary Verification Test
+        run: |
+          python tools/verify_supply.py
+
