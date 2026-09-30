@@ -1,0 +1,16 @@
+name: qitcoin_server
+description: Qitcoin Core Serverpod Realtime High-Performance Backend
+version: 1.0.0
+homepage: https://github.com/qitcoin/qitcoin
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  serverpod: ^1.2.0
+  serverpod_auth_server: ^1.2.0
+  crypto: ^3.0.3
+  http: ^1.2.0
+
+dev_dependencies:
+  lints: ^3.0.0
