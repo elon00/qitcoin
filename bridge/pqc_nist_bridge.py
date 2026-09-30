@@ -38,12 +38,21 @@ class PQCBridgeAttestor:
     """
     def __init__(self):
         self.pqc_enabled = PQC_NATIVE_AVAILABLE
+        seed_hex = os.getenv("BRIDGE_RELAYER_PQC_SEED", "").strip()
         if self.pqc_enabled:
-            # Generate NIST FIPS 204 (ML-DSA-65) Relayer Signing Keys
-            self.relayer_seed = hashlib.sha256(b"Qitcoin_NIST_PQC_Bridge_Relayer_Master_Seed_2026").digest()
+            try:
+                seed = bytes.fromhex(seed_hex)
+                if len(seed) != 32:
+                    raise ValueError("seed must be exactly 32 bytes")
+            except ValueError:
+                # Never fall back to a predictable embedded private key.
+                self.pqc_enabled = False
+
+        if self.pqc_enabled:
+            # Secret material must be injected by the runtime secret store.
+            self.relayer_seed = seed
             self.dsa_pk, self.dsa_sk = ml_dsa_65_keygen(self.relayer_seed)
-            # Generate NIST FIPS 203 (ML-KEM-768) Encryption Keys
-            self.kem_seed = hashlib.sha256(b"Qitcoin_NIST_PQC_KEM_Master_Seed_2026").digest()
+            self.kem_seed = hashlib.sha256(b"QTC-ML-KEM-768" + seed).digest()
             self.kem_ek, self.kem_dk = ml_kem_768_keygen(self.kem_seed)
         else:
             self.dsa_pk, self.dsa_sk = b"", b""
