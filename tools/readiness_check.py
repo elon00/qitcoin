@@ -20,7 +20,7 @@ for p in Path(".").rglob("*"):
             t = p.read_text(errors="ignore")
         except Exception:
             continue
-        if "secure_qtc_password_2026" in t and p.name != ".env.example":
+        if "secure_qtc_password_2026" in t and p.name not in {".env.example", "readiness_check.py"}:
             bad.append(str(p))
 if bad:
     print("Hard-coded example credentials found outside .env.example:", bad)
