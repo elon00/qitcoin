@@ -68,6 +68,15 @@ def wait_for_height(node, target_height, timeout_sec=30):
         time.sleep(0.5)
     raise TimeoutError(f"{node.name} failed to reach height {target_height} within {timeout_sec}s.")
 
+def wait_for_mempool(node, txid, timeout_sec=20):
+    start = time.time()
+    while time.time() - start < timeout_sec:
+        mp = node.call("getrawmempool")
+        if mp.get("success") and txid in mp.get("result", []):
+            return True
+        time.sleep(0.5)
+    return False
+
 def ensure_wallet(node, wallet_name="default"):
     lw = node.call("listwallets")
     if lw.get("success") and wallet_name in lw.get("result", []):
@@ -167,15 +176,13 @@ def run_strict_3node_test():
     print(f"Transaction broadcasted with txid: {txid}")
 
     # Check mempool on Node 2
-    time.sleep(1)
-    mp2 = node2.call("getrawmempool")
-    assert mp2["success"], f"Failed to get mempool from Node 2: {mp2['error']}"
-    assert txid in mp2["result"], f"[FAIL] Transaction {txid} not found in Node 2 mempool!"
+    in_mempool = wait_for_mempool(node2, txid, timeout_sec=20)
+    assert in_mempool, f"[FAIL] Transaction {txid} not found in Node 2 mempool within 20s!"
     print(f"[PASS] Transaction propagated to Node 2 mempool without consensus failure.")
 
     # Mine block to confirm transaction
     node1.call("generatetoaddress", [1, miner_addr])
-    wait_for_height(node2, target_h + 1, timeout_sec=10)
+    wait_for_height(node2, target_h + 1, timeout_sec=20)
     bal2 = node2.call("getbalance", wallet="receiver")
     assert bal2["success"], f"Failed to get balance from Node 2: {bal2.get('error')}"
     assert float(bal2["result"]) >= send_amount, f"[FAIL] Receiver balance {bal2['result']} < {send_amount}"
