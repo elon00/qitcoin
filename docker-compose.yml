@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.qitcoind
     container_name: qitcoin-node1
-    command: ["-conf=/etc/qitcoin/qitcoin.conf", "-printtoconsole"]
+    command: ["-conf=/etc/qitcoin/qitcoin.conf", "-printtoconsole", "-fallbackfee=0.0001"]
     volumes:
       - ./docker/node1.conf:/etc/qitcoin/qitcoin.conf:ro
       - node1-data:/home/qitcoin/.qitcoin
@@ -21,7 +21,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.qitcoind
     container_name: qitcoin-node2
-    command: ["-conf=/etc/qitcoin/qitcoin.conf", "-printtoconsole"]
+    command: ["-conf=/etc/qitcoin/qitcoin.conf", "-printtoconsole", "-fallbackfee=0.0001"]
     volumes:
       - ./docker/node2.conf:/etc/qitcoin/qitcoin.conf:ro
       - node2-data:/home/qitcoin/.qitcoin
@@ -39,7 +39,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.qitcoind
     container_name: qitcoin-node3
-    command: ["-conf=/etc/qitcoin/qitcoin.conf", "-printtoconsole"]
+    command: ["-conf=/etc/qitcoin/qitcoin.conf", "-printtoconsole", "-fallbackfee=0.0001"]
     volumes:
       - ./docker/node3.conf:/etc/qitcoin/qitcoin.conf:ro
       - node3-data:/home/qitcoin/.qitcoin

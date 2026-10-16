@@ -154,6 +154,7 @@ def run_strict_3node_test():
 
     send_amount = 5000.0 # 5,000 QTC
     print(f"Sending {send_amount:,.2f} QTC from Node 1 to Node 2 ({recv_addr})...")
+    node1.call("settxfee", [0.0001], wallet="miner")
     send_res = node1.call("sendtoaddress", [recv_addr, send_amount], wallet="miner")
     assert send_res["success"], f"Failed to send transaction: {send_res.get('error')}"
     txid = send_res["result"]
