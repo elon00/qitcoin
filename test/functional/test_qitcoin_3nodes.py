@@ -34,14 +34,15 @@ class RPCClient:
             "Authorization": f"Basic {auth}"
         }
 
-    def call(self, method, params=None):
+    def call(self, method, params=None, wallet=None):
+        url = f"http://127.0.0.1:{self.port}/wallet/{wallet}" if wallet else self.url
         payload = json.dumps({
             "jsonrpc": "2.0",
             "id": 1,
             "method": method,
             "params": params or []
         }).encode()
-        req = urllib.request.Request(self.url, data=payload, headers=self.headers)
+        req = urllib.request.Request(url, data=payload, headers=self.headers)
         try:
             with urllib.request.urlopen(req, timeout=10) as res:
                 body = json.loads(res.read().decode())
@@ -66,6 +67,18 @@ def wait_for_height(node, target_height, timeout_sec=30):
             return res["result"]
         time.sleep(0.5)
     raise TimeoutError(f"{node.name} failed to reach height {target_height} within {timeout_sec}s.")
+
+def ensure_wallet(node, wallet_name="default"):
+    lw = node.call("listwallets")
+    if lw.get("success") and wallet_name in lw.get("result", []):
+        return True
+    cw = node.call("createwallet", [wallet_name])
+    if cw.get("success"):
+        return True
+    load = node.call("loadwallet", [wallet_name])
+    if load.get("success"):
+        return True
+    return False
 
 def run_strict_3node_test():
     print("=" * 75)
@@ -113,8 +126,11 @@ def run_strict_3node_test():
 
     # 3. Block Mining & Propagation
     print("\n--- Test 2: Mining & Full Block Propagation ---")
-    miner_addr_res = node1.call("getnewaddress")
-    miner_addr = miner_addr_res["result"] if miner_addr_res["success"] else "Q1TrillionQitcoinGenesisDevKey888"
+    ensure_wallet(node1, "miner")
+    miner_addr_res = node1.call("getnewaddress", wallet="miner")
+    assert miner_addr_res["success"], f"Failed to get miner address from Node 1: {miner_addr_res.get('error')}"
+    miner_addr = miner_addr_res["result"]
+    print(f"Node 1 miner address generated: {miner_addr}")
     
     initial_h = node1.call("getblockcount")["result"]
     blocks_to_mine = 101 # 101 blocks for full coinbase maturity
@@ -131,14 +147,15 @@ def run_strict_3node_test():
 
     # 4. Mempool Transaction Relay & Fee Accounting
     print("\n--- Test 3: Transaction Broadcast & Mempool Sync ---")
-    recv_res = node2.call("getnewaddress")
-    assert recv_res["success"], f"Failed to get address from Node 2: {recv_res['error']}"
+    ensure_wallet(node2, "receiver")
+    recv_res = node2.call("getnewaddress", wallet="receiver")
+    assert recv_res["success"], f"Failed to get address from Node 2: {recv_res.get('error')}"
     recv_addr = recv_res["result"]
 
     send_amount = 5000.0 # 5,000 QTC
     print(f"Sending {send_amount:,.2f} QTC from Node 1 to Node 2 ({recv_addr})...")
-    send_res = node1.call("sendtoaddress", [recv_addr, send_amount])
-    assert send_res["success"], f"Failed to send transaction: {send_res['error']}"
+    send_res = node1.call("sendtoaddress", [recv_addr, send_amount], wallet="miner")
+    assert send_res["success"], f"Failed to send transaction: {send_res.get('error')}"
     txid = send_res["result"]
     print(f"Transaction broadcasted with txid: {txid}")
 
@@ -152,7 +169,8 @@ def run_strict_3node_test():
     # Mine block to confirm transaction
     node1.call("generatetoaddress", [1, miner_addr])
     wait_for_height(node2, target_h + 1, timeout_sec=10)
-    bal2 = node2.call("getbalance")
+    bal2 = node2.call("getbalance", wallet="receiver")
+    assert bal2["success"], f"Failed to get balance from Node 2: {bal2.get('error')}"
     print(f"[PASS] Transaction confirmed. Node 2 spendable balance: {bal2['result']} QTC.")
 
     # 5. Reorganization Test (Simulated Chain Fork & Resolution)
