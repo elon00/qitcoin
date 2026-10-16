@@ -29,7 +29,7 @@ RUN ./autogen.sh && \
 FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y \
-    libevent-2.1-7 libevent-pthreads-2.1-7 libsqlite3-0 libzmq5 curl jq \
+    libevent-2.1-7 libevent-pthreads-2.1-7 libsqlite3-0 libzmq5 libminiupnpc17 libnatpmp1 curl jq \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/src/qitcoind /usr/local/bin/qitcoind
