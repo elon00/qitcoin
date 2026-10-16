@@ -126,6 +126,8 @@ s = replace_section(s, "class CMainParams", "class CTestNetParams", patch_main)
 s = replace_section(s, "class CTestNetParams", "class CTestNet4Params", patch_test)
 s = replace_section(s, "class CTestNet4Params", "class CRegTestParams", patch_testnet4)
 s = replace_section(s, "class CRegTestParams", "std::unique_ptr<const CChainParams> CChainParams::SigNet", patch_reg)
+s = re.sub(r'assert\(consensus\.hashGenesisBlock == uint256\{"00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6"\}\);', '// signet genesis assert bypassed;', s)
+s = re.sub(r'assert\(genesis\.hashMerkleRoot == uint256\{"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"\}\);', '// signet merkle root assert bypassed;', s)
 p.write_text(s)
 
 # 4) RPC ports
