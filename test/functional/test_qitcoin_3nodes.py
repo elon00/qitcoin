@@ -133,7 +133,7 @@ def run_strict_3node_test():
     print(f"Node 1 miner address generated: {miner_addr}")
     
     initial_h = node1.call("getblockcount")["result"]
-    blocks_to_mine = 101 # 101 blocks for full coinbase maturity
+    blocks_to_mine = 110 # 110 blocks for full coinbase maturity
     print(f"Mining {blocks_to_mine} blocks on Node 1 to reach block maturity...")
     mine_res = node1.call("generatetoaddress", [blocks_to_mine, miner_addr])
     assert mine_res["success"], f"Mining failed: {mine_res['error']}"
@@ -152,7 +152,13 @@ def run_strict_3node_test():
     assert recv_res["success"], f"Failed to get address from Node 2: {recv_res.get('error')}"
     recv_addr = recv_res["result"]
 
-    send_amount = 5000.0 # 5,000 QTC
+    bal1_res = node1.call("getbalance", wallet="miner")
+    assert bal1_res["success"], f"Failed to get Node 1 balance: {bal1_res.get('error')}"
+    bal1 = float(bal1_res["result"])
+    print(f"Node 1 spendable balance before send: {bal1:,.2f} QTC")
+    assert bal1 > 0, f"[FAIL] Node 1 has no spendable balance: {bal1}"
+
+    send_amount = min(5000.0, bal1 * 0.5)
     print(f"Sending {send_amount:,.2f} QTC from Node 1 to Node 2 ({recv_addr})...")
     node1.call("settxfee", [0.0001], wallet="miner")
     send_res = node1.call("sendtoaddress", [recv_addr, send_amount], wallet="miner")
@@ -172,6 +178,7 @@ def run_strict_3node_test():
     wait_for_height(node2, target_h + 1, timeout_sec=10)
     bal2 = node2.call("getbalance", wallet="receiver")
     assert bal2["success"], f"Failed to get balance from Node 2: {bal2.get('error')}"
+    assert float(bal2["result"]) >= send_amount, f"[FAIL] Receiver balance {bal2['result']} < {send_amount}"
     print(f"[PASS] Transaction confirmed. Node 2 spendable balance: {bal2['result']} QTC.")
 
     # 5. Reorganization Test (Simulated Chain Fork & Resolution)
