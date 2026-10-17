@@ -19,8 +19,14 @@ jobs:
         run: |
           echo "Building native qitcoind container and starting 3-node cluster..."
           docker compose up -d --build
-          echo "Waiting 15 seconds for nodes to initialize..."
-          sleep 15
+          echo "Waiting up to 45 seconds for nodes to initialize..."
+          for i in {1..45}; do
+            if curl -s --user qtcadmin:secure_qtc_password_2026 --data-binary '{"jsonrpc": "1.0", "id":"initcheck", "method": "getblockchaininfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:19332/ | grep -q "result"; then
+              echo "Node 1 RPC ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
           docker compose ps
 
       - name: Check Cluster Logs

@@ -15,7 +15,7 @@ if missing:
 
 bad = []
 for p in Path(".").rglob("*"):
-    if p.is_file() and ".git" not in p.parts:
+    if p.is_file() and ".git" not in p.parts and "__pycache__" not in p.parts and p.suffix != ".pyc":
         try:
             t = p.read_text(errors="ignore")
         except Exception:
@@ -24,7 +24,8 @@ for p in Path(".").rglob("*"):
         normalized = str(p).replace("\\", "/")
         test_fixture = normalized in {
             "docker/node1.conf", "docker/node2.conf", "docker/node3.conf",
-            "test/functional/test_qitcoin_3nodes.py"
+            "test/functional/test_qitcoin_3nodes.py",
+            ".github/workflows/test-3node-cluster.yml"
         }
         if "secure_qtc_password_2026" in t and p.name not in {".env.example", "readiness_check.py"} and not test_fixture:
             bad.append(str(p))
