@@ -17,7 +17,7 @@ jobs:
           test -f docs/END_TO_END_SOLUTIONS.md
           test -f scripts/bootstrap-bitcoin-core.sh
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Run 1 Trillion Supply Monetary Verification Test
